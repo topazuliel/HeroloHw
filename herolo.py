@@ -24,21 +24,22 @@ def hello_world():
 
 @app.route('/write_message', methods=['GET', 'POST'])
 def write_message():
-    connect = None
+    collection = None
     if request.method == 'POST':
         try:
-            connect = mongo.db.Receiver
+            collection = db.connect_to_collection(mongo, 'Masseges')
             quary = request.args
-            auto = authentication.check_message_quary(quary)
-            if auto == 'OK':
+            auth = authentication.check_message_quary(quary)
+            if auth == 'OK':
                 massage = Massage(quary, str(datetime.datetime.now()))
-                connect.insert(massage.json_message())
-            elif auto != '':
-                return 'Write message Failed {}'.format(auto)
+                collection.insert(massage.json_message())
+            elif auth != '':
+                return 'Write message Failed {}'.format(auth)
             else:
                 return 'Missing info: must add sender,receiver,message and subject'
 
             return 'Message send successfully'
+
         except:
             return 'Db Connection Failed'
 
@@ -48,14 +49,14 @@ def get_all_messeges():
     messges_send_str = ''
     messegs_received_str = ''
     parse_messages = list()
-    if (authentication.check_user_quary(request.args)):
+    if authentication.check_user_quary(request.args):
         user = request.args.get('user')
     else:
         return 'User Not Found'
     try:
-        connect = mongo.db.Receiver
-        messges_send = connect.find({'sender': user})
-        messegs_received = connect.find({'receiver': user})
+        collection = db.connect_to_collection(mongo, 'Masseges')
+        messges_send = collection.find({'sender': user})
+        messegs_received = collection.find({'receiver': user})
         if messegs_received.count() == 0 and messges_send.count() == 0:
             return "The user {} don't have any messages".format(user)
         if messges_send.count() != 0:
@@ -88,8 +89,8 @@ def get_all_unread_messeges():
     else:
         return 'User Not Found'
     try:
-        connect = mongo.db.Receiver
-        messges_unread = connect.find({'receiver': user, 'unread': True})
+        collection = db.connect_to_collection(mongo, 'Masseges')
+        messges_unread = collection.find({'receiver': user, 'unread': True})
         if messges_unread.count() != 0:
             for message in messges_unread:
                 parse_messages.append(messeges_utils.messege_parser(message))
@@ -108,10 +109,10 @@ def read_message():
     else:
         return 'User Not Found'
     try:
-        connect = mongo.db.Receiver
-        messages_unread = connect.find_one({'receiver': user, 'unread': True})
+        collection = db.connect_to_collection(mongo, 'Masseges')
+        messages_unread = collection.find_one({'receiver': user, 'unread': True})
         if messages_unread is not None:
-            connect.find_one_and_update({'_id': messages_unread['_id']}, {'$set': {'unread': False}})
+            collection.find_one_and_update({'_id': messages_unread['_id']}, {'$set': {'unread': False}})
             return messeges_utils.messege_parser(messages_unread)
         else:
             return "The user {} don't have any Unread messages".format(user)
