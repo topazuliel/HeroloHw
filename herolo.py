@@ -46,48 +46,46 @@ def get_all_messeges():
     messges_send_str = ''
     messegs_received_str = ''
     parse_messages = list()
-    if (request.method == 'POST'):
-        user = request.args.get('user')
-        try:
-            connect = mongo.db.Receiver
-            messges_send = connect.find({'sender': user})
-            if (messges_send.count() != 0):
-                for message in messges_send:
-                    parse_messages.append(messeges_utils.messege_parser(message))
-                messges_send_str = ',\n'.join(parse_messages)
-            messegs_received = connect.find({'receiver': user})
-            parse_messages = []
-            if (messegs_received.count() != 0):
-                for message in messegs_received:
-                    parse_messages.append(messeges_utils.messege_parser(message))
-                    messegs_received_str = ',\n'.join(parse_messages)
+    user = request.args.get('user')
+    try:
+        connect = mongo.db.Receiver
+        messges_send = connect.find({'sender': user})
+        if (messges_send.count() != 0):
+            for message in messges_send:
+                parse_messages.append(messeges_utils.messege_parser(message))
+            messges_send_str = ',\n'.join(parse_messages)
+        messegs_received = connect.find({'receiver': user})
+        parse_messages = []
+        if (messegs_received.count() != 0):
+            for message in messegs_received:
+                parse_messages.append(messeges_utils.messege_parser(message))
+                messegs_received_str = ',\n'.join(parse_messages)
 
-        except:
-            return 'Db Connection Failed'
+    except:
+        return 'Db Connection Failed'
 
-        return '{user} send messages:\n {send}\n\n{user}  received messages:\n {receive}'.format(user=user,
-                                                                                                 send=messges_send_str,
-                                                                                                 receive=messegs_received_str)
+    return '{user} send messages:\n {send}\n\n{user}  received messages:\n {receive}'.format(user=user,
+                                                                                             send=messges_send_str,
+                                                                                             receive=messegs_received_str)
 
 
 @app.route('/get_all_unread_messages', methods=['GET', 'POST'])
 def get_all_unread_messeges():
     messges_unread_str = ''
     parse_messages = list()
-    if (request.method == 'POST'):
-        user = request.args.get('user')
-        try:
-            connect = mongo.db.Receiver
-            messges_unread = connect.find({'receiver': user, 'unread': True})
-            if (messges_unread.count() != 0):
-                for message in messges_unread:
-                    parse_messages.append(messeges_utils.messege_parser(message))
-                    messges_unread_str = ',\n'.join(parse_messages)
+    user = request.args.get('user')
+    try:
+        connect = mongo.db.Receiver
+        messges_unread = connect.find({'receiver': user, 'unread': True})
+        if (messges_unread.count() != 0):
+            for message in messges_unread:
+                parse_messages.append(messeges_utils.messege_parser(message))
+                messges_unread_str = ',\n'.join(parse_messages)
 
-        except:
-            return 'Db Connection Failed'
+    except:
+        return 'Db Connection Failed'
 
-        return '{user} unread messages:\n {unread}'.format(user=user, unread=messges_unread_str, )
+    return '{user} unread messages:\n {unread}'.format(user=user, unread=messges_unread_str, )
 
 
 @app.route('/read_message', methods=['GET', 'POST'])

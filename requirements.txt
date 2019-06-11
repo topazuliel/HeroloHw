@@ -1,0 +1,5 @@
+flask
+flask_pymongo
+passlib
+jinja2
+gunicorn
