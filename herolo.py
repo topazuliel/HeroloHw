@@ -110,7 +110,7 @@ def read_message():
     try:
         connect = mongo.db.Receiver
         messages_unread = connect.find_one({'receiver': user, 'unread': True})
-        if len(messages_unread) is not None:
+        if messages_unread is not None:
             connect.find_one_and_update({'_id': messages_unread['_id']}, {'$set': {'unread': False}})
             return messeges_utils.messege_parser(messages_unread)
         else:
