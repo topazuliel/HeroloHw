@@ -1,11 +1,12 @@
 import datetime
-import messeges_utils
-import authentication
-from flask import Flask, request, jsonify
-from passlib.hash import sha256_crypt
+
+from flask import Flask, request
 from flask_pymongo import PyMongo
-from massage import Massage
+
+import authentication
+import messeges_utils
 from db_connaction import DbConnection
+from massage import Massage
 
 db = DbConnection()
 
@@ -19,6 +20,7 @@ app = Flask(__name__)
 @app.route('/')
 def hello_world():
     return 'Hello Herolo!'
+
 
 @app.route('/write_message', methods=['GET', 'POST'])
 def write_message():
@@ -41,25 +43,32 @@ def write_message():
             return 'Db Connection Failed'
 
 
-@app.route('/get_all_messages', methods=['GET', 'POST'])
+@app.route('/get_all_messages', methods=['GET'])
 def get_all_messeges():
     messges_send_str = ''
     messegs_received_str = ''
     parse_messages = list()
-    user = request.args.get('user')
+    if (authentication.check_user_quary(request.args)):
+        user = request.args.get('user')
+    else:
+        return 'User Not Found'
     try:
         connect = mongo.db.Receiver
         messges_send = connect.find({'sender': user})
-        if (messges_send.count() != 0):
+        messegs_received = connect.find({'receiver': user})
+        if messegs_received.count() == 0 and messges_send.count() == 0:
+            return "The user {} don't have any messages".format(user)
+        if messges_send.count() != 0:
             for message in messges_send:
                 parse_messages.append(messeges_utils.messege_parser(message))
             messges_send_str = ',\n'.join(parse_messages)
-        messegs_received = connect.find({'receiver': user})
+
         parse_messages = []
-        if (messegs_received.count() != 0):
+        if messegs_received.count() != 0:
             for message in messegs_received:
                 parse_messages.append(messeges_utils.messege_parser(message))
                 messegs_received_str = ',\n'.join(parse_messages)
+
 
     except:
         return 'Db Connection Failed'
@@ -69,36 +78,46 @@ def get_all_messeges():
                                                                                              receive=messegs_received_str)
 
 
-@app.route('/get_all_unread_messages', methods=['GET', 'POST'])
+@app.route('/get_all_unread_messages', methods=['GET'])
 def get_all_unread_messeges():
     messges_unread_str = ''
     parse_messages = list()
-    user = request.args.get('user')
+
+    if authentication.check_user_quary(request.args):
+        user = request.args.get('user')
+    else:
+        return 'User Not Found'
     try:
         connect = mongo.db.Receiver
         messges_unread = connect.find({'receiver': user, 'unread': True})
-        if (messges_unread.count() != 0):
+        if messges_unread.count() != 0:
             for message in messges_unread:
                 parse_messages.append(messeges_utils.messege_parser(message))
                 messges_unread_str = ',\n'.join(parse_messages)
-
+            return '{user} unread messages:\n {unread}'.format(user=user, unread=messges_unread_str)
+        else:
+            return "The user {} don't have any Unread messages".format(user)
     except:
         return 'Db Connection Failed'
 
-    return '{user} unread messages:\n {unread}'.format(user=user, unread=messges_unread_str, )
 
-
-@app.route('/read_message', methods=['GET', 'POST'])
+@app.route('/read_message', methods=['GET'])
 def read_message():
-    if (request.method == 'POST'):
+    if authentication.check_user_quary(request.args):
         user = request.args.get('user')
-        try:
-            connect = mongo.db.Receiver
-            messge_unread = connect.find_one({'receiver': user, 'unread': True})
-            connect.find_one_and_update({'_id': messges_unread['_id']}, {'$set': {'unread': False}})
-            return messeges_utils.messege_parser(messge_unread)
-        except Exception as e:
-            print(e)
+    else:
+        return 'User Not Found'
+    try:
+        connect = mongo.db.Receiver
+        messages_unread = connect.find_one({'receiver': user, 'unread': True})
+        if messages_unread.count() != 0:
+            connect.find_one_and_update({'_id': messages_unread['_id']}, {'$set': {'unread': False}})
+            return messeges_utils.messege_parser(messages_unread)
+        else:
+            return "The user {} don't have any Unread messages".format(user)
+
+    except Exception as e:
+        print(e)
 
 
 if __name__ == '__main__':
