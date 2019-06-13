@@ -27,4 +27,4 @@ class Massage():
         return self.__creation_date
 
     def json_message(self):
-        return dict(sender=self.__sender,receiver=self.__receiver,subject=self.__subject,message=self.__message,date=self.__creation_date,unread=True)
+        return dict(sender=self.__sender,receiver=self.__receiver,subject=self.__subject,message=self.__message,creation_date=self.__creation_date,unread=True)

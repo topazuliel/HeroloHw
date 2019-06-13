@@ -1,15 +1,12 @@
-import datetime
-
-from flask import Flask, request
+from flask import Flask, request, session
 from flask_pymongo import PyMongo
 
 import authentication
-import messeges_utils
-from db_connaction import DbConnection
-from massage import Massage
+from api_calls import Api
+from db_connaction import DbConfig
+from login_auth import LoginAuth
 
-db = DbConnection()
-
+db = DbConfig()
 app = Flask(__name__)
 app.config["MONGO_DBNAME"] = db.db_name
 app.config["MONGO_URI"] = db.db_connection
@@ -17,109 +14,89 @@ mongo = PyMongo(app)
 app = Flask(__name__)
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello Herolo!'
+@app.before_first_request
+def update_user():
+    api_calls.user = session.get('username')
 
 
 @app.route('/write_message', methods=['GET', 'POST'])
 def write_message():
-    collection = None
-    if request.method == 'POST':
-        try:
-            collection = db.connect_to_collection(mongo, 'Masseges')
-            quary = request.args
-            auth = authentication.check_message_quary(quary)
-            if auth == 'OK':
-                massage = Massage(quary, str(datetime.datetime.now()))
-                collection.insert(massage.json_message())
-            elif auth != '':
-                return 'Write message Failed {}'.format(auth)
-            else:
-                return 'Missing info: must add sender,receiver,message and subject'
-
-            return 'Message send successfully'
-
-        except:
-            return 'Db Connection Failed'
+    quary = request.args
+    auth = authentication.check_message_quary(quary)
+    if auth == 'OK':
+        api_calls.write_message(quary)
+        return 'Message send successfully'
+    if auth != '':
+        return 'Write message Failed {}'.format(auth)
+    else:
+        return 'Missing info: must add sender,receiver,message and subject'
 
 
 @app.route('/get_all_messages', methods=['GET'])
-def get_all_messeges():
-    messges_send_str = ''
-    messegs_received_str = ''
-    parse_messages = list()
-    if authentication.check_user_quary(request.args):
-        user = request.args.get('user')
+def get_all_messages():
+    if authentication.check_user_quary(request.args) or api_calls.user:
+        user = request.args.get('user') if not api_calls.user else api_calls.user
+        return api_calls.get_all_messeges(user)
     else:
         return 'User Not Found'
-    try:
-        collection = db.connect_to_collection(mongo, 'Masseges')
-        messges_send = collection.find({'sender': user})
-        messegs_received = collection.find({'receiver': user})
-        if messegs_received.count() == 0 and messges_send.count() == 0:
-            return "The user {} don't have any messages".format(user)
-        if messges_send.count() != 0:
-            for message in messges_send:
-                parse_messages.append(messeges_utils.messege_parser(message))
-            messges_send_str = ',\n'.join(parse_messages)
-
-        parse_messages = []
-        if messegs_received.count() != 0:
-            for message in messegs_received:
-                parse_messages.append(messeges_utils.messege_parser(message))
-                messegs_received_str = ',\n'.join(parse_messages)
-
-
-    except:
-        return 'Db Connection Failed'
-
-    return '{user} send messages:\n {send}\n\n{user}  received messages:\n {receive}'.format(user=user,
-                                                                                             send=messges_send_str,
-                                                                                             receive=messegs_received_str)
 
 
 @app.route('/get_all_unread_messages', methods=['GET'])
-def get_all_unread_messeges():
-    messges_unread_str = ''
-    parse_messages = list()
-
-    if authentication.check_user_quary(request.args):
-        user = request.args.get('user')
+def get_all_unread_messages():
+    if authentication.check_user_quary(request.args) or api_calls.user:
+        user = request.args.get('user') if not api_calls.user else api_calls.user
+        return api_calls.get_all_unread_messages(user)
     else:
         return 'User Not Found'
-    try:
-        collection = db.connect_to_collection(mongo, 'Masseges')
-        messges_unread = collection.find({'receiver': user, 'unread': True})
-        if messges_unread.count() != 0:
-            for message in messges_unread:
-                parse_messages.append(messeges_utils.messege_parser(message))
-                messges_unread_str = ',\n'.join(parse_messages)
-            return '{user} unread messages:\n {unread}'.format(user=user, unread=messges_unread_str)
-        else:
-            return "The user {} don't have any Unread messages".format(user)
-    except:
-        return 'Db Connection Failed'
 
 
 @app.route('/read_message', methods=['GET'])
 def read_message():
-    if authentication.check_user_quary(request.args):
-        user = request.args.get('user')
+    if authentication.check_user_quary(request.args) or api_calls.user:
+        user = request.args.get('user') if not api_calls.user else api_calls.user
+        return api_calls.read_message(user)
     else:
         return 'User Not Found'
-    try:
-        collection = db.connect_to_collection(mongo, 'Masseges')
-        messages_unread = collection.find_one({'receiver': user, 'unread': True})
-        if messages_unread is not None:
-            collection.find_one_and_update({'_id': messages_unread['_id']}, {'$set': {'unread': False}})
-            return messeges_utils.messege_parser(messages_unread)
-        else:
-            return "The user {} don't have any Unread messages".format(user)
 
-    except Exception as e:
-        print(e)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if not session.get('logged_in'):
+        data = request.args
+        LoginAuth(data.get('username'), data.get('password')).update_user_api_call(mongo, api_calls)
+        if api_calls is not None:
+            session['logged_in'] = True
+            session['username'] = data.get('username')
+            return 'Login Successfully '
+        return 'Login Failed Username or Password are incorrect'
+    else:
+        return "You're logged in already!"
+
+
+@app.route('/delete_message', methods=['GET'])
+def delete_message():
+    quary = request.args
+    if authentication.check_user_quary(request.args) or api_calls.user:
+        user = request.args.get('user') if not api_calls.user else api_calls.user
+    else:
+        return 'User Not Found'
+    To, From, tmsp, delete_as = authentication.check_and_parse_delete_quary(quary, user)
+    return api_calls.delete_message(To, From, tmsp, delete_as)
+
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session['logged_in'] = False
+    session['username'] = ''
+    api_calls.user = ''
+    return "You're logged out"
 
 
 if __name__ == '__main__':
+    """in production  we use env var or flag for secret key"""
+    app.secret_key = "Simba"
+    api_calls = Api(mongo)
     app.run()
+
+
+# # dal = dataAccesLayer =
