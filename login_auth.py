@@ -1,7 +1,5 @@
 from passlib.hash import sha256_crypt
 
-from api_calls import Api
-
 
 class LoginAuth(object):
     def __init__(self, username, password):
