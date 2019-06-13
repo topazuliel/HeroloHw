@@ -14,9 +14,14 @@ mongo = PyMongo(app)
 app = Flask(__name__)
 
 
-@app.before_first_request
-def update_user():
-    api_calls.user = session.get('username')
+# @app.before_first_request
+# def update_user():
+#     api_calls.user = session.get('username')
+
+
+@app.route('/')
+def start():
+    return "App is on"
 
 
 @app.route('/write_message', methods=['GET', 'POST'])
@@ -94,8 +99,8 @@ def logout():
 
 if __name__ == '__main__':
     """in production  we use env var or flag for secret key"""
-    app.secret_key = "Simba"
     api_calls = Api(mongo)
+    app.secret_key = "Simba"
     app.run()
 
 
