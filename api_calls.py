@@ -21,7 +21,6 @@ class CollectionTags(Enum):
     Ok = 'OK'
 
 
-
 class Api():
     def __init__(self, mongo, user=None, db_config=None):
         self.user = user
@@ -108,13 +107,17 @@ class Api():
     def delete_message(self, send_to, send_from, time_stamp, delete_as):
         """DELETE http://127.0.0.1:5000/message/delete?from=<username>&to=<username>&tmsp=<time stamp> if login
         can pass only 'from' or 'to' depend if need to delete as owner or rec"""
-        collection = self.db.get_connection(self.mongo, delete_as)
+        send_collection = self.db.get_connection(self.mongo, CollectionTags.Send.value)
+        receive_collection = self.db.get_connection(self.mongo, CollectionTags.Receiver.value)
+        query = {'sender': send_from, 'receiver': send_to}
         if time_stamp is not None:
-            is_deleted = collection.delete_one({'creation_date': time_stamp})
+            is_deleted = send_collection.delete_one({'creation_date': time_stamp})
+            if not is_deleted.deleted_count:
+                is_deleted = receive_collection.delete_one({'creation_date': time_stamp})
         elif delete_as == CollectionTags.Send.name:
-            is_deleted = collection.delete_one({'sender': send_from, 'receiver': send_to})
+            is_deleted = send_collection.delete_one(query)
         else:
-            is_deleted = collection.delete_one({'sender': send_from, 'receiver': send_to, 'unread': False})
+            is_deleted = receive_collection.delete_one(query)
         if is_deleted.deleted_count:
             return jsonify(dict(success=True, massages="The Message has been deleted"))
         return jsonify(dict(success=False, massages="Message not found"))
