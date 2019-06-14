@@ -16,11 +16,11 @@ def check_message_query(quary, user):
     except:
         return ''
 
-    return 'OK'
+    return CollectionTags.Ok.value
 
 
 def check_user_query(quary):
-    if quary.get('user') == '' or quary.get('user') is None:
+    if quary.get(CollectionTags.User.value) == '' or quary.get(CollectionTags.User.value) is None:
         return False
     return True
 
@@ -30,9 +30,9 @@ def check_and_parse_delete_query(query, user=None):
     time_stamp = None
     error = None
 
-    if query.get('tmsp'):
-        time_stamp = query.get('tmsp')
-    if (query.get('from') == '' or query.get('from') is None):
+
+    time_stamp = query.get(CollectionTags.Time_Stamp.value)
+    if (query.get(CollectionTags.From.value) == '' or query.get(CollectionTags.From.value) is None):
         if user is not None and not user_is_used:
             user_is_used = True
             send_from = user
@@ -40,8 +40,8 @@ def check_and_parse_delete_query(query, user=None):
             error = 'Please add "from" args'
             send_from = None
     else:
-        send_from = query.get('from')
-    if (query.get('to') == '' or query.get('to') is None):
+        send_from = query.get(CollectionTags.From.value)
+    if (query.get(CollectionTags.To.value) == '' or query.get(CollectionTags.To.value) is None):
         if user is not None and not user_is_used:
             user_is_used = True
             send_to = user
@@ -49,7 +49,7 @@ def check_and_parse_delete_query(query, user=None):
             error= 'Please add "to" args'
             send_to = None
     else:
-        send_to = query.get('to')
+        send_to = query.get(CollectionTags.To.value)
 
     if user == send_to:
         delete_as = CollectionTags.Receiver.name

@@ -2,7 +2,7 @@ from flask import Flask, request, session, jsonify
 from flask_pymongo import PyMongo
 
 import authentication
-from api_calls import Api
+from api_calls import Api,CollectionTags
 from db_config import DbConfig
 from login_auth import LoginAuth
 
@@ -17,7 +17,7 @@ api = Api(mongo)
 
 @app.before_first_request
 def update_user():
-    api.user = session.get('username')
+    api.user = session.get(CollectionTags.Username.value)
 
 
 @app.route('/')
@@ -29,7 +29,7 @@ def start():
 def write_message():
     query = request.args
     auth = authentication.check_message_query(query, api.user)
-    if auth == 'OK':
+    if auth == CollectionTags.Ok.value:
         api.write_message(query, api.user)
         return jsonify(dict(success=True, massage='Message send successfully'))
     if auth != '':
@@ -41,7 +41,7 @@ def write_message():
 @app.route('/message/all', methods=['GET'])
 def get_all_messages():
     if authentication.check_user_query(request.args) or api.user:
-        user = request.args.get('user') if not api.user else api.user
+        user = request.args.get(CollectionTags.User.value) if not api.user else api.user
         return api.get_all_messeges(user)
     else:
         return jsonify(dict(success=False, massage='User Not Found'))
@@ -50,7 +50,7 @@ def get_all_messages():
 @app.route('/message/unread', methods=['GET'])
 def get_all_unread_messages():
     if authentication.check_user_query(request.args) or api.user:
-        user = request.args.get('user') if not api.user else api.user
+        user = request.args.get(CollectionTags.User.value) if not api.user else api.user
         return api.get_all_unread_messages(user)
     else:
         return jsonify(dict(success=False, massage='User Not Found'))
@@ -59,31 +59,19 @@ def get_all_unread_messages():
 @app.route('/message/read', methods=['GET'])
 def read_message():
     if authentication.check_user_query(request.args) or api.user:
-        user = request.args.get('user') if not api.user else api.user
-        return api.read_message(user)
+        user = request.args.get(CollectionTags.User.value) if not api.user else api.user
+        send_from = request.args.get(CollectionTags.From.value)
+        return api.read_message(user,sender=send_from)
     else:
         return jsonify(dict(success=False, massage='User Not Found'))
 
-
-@app.route('/login', methods=['POST'])
-def login():
-    if not session.get('logged_in'):
-        data = request.args
-        valid = LoginAuth(data.get('username'), data.get('password')).update_user_api_call(mongo, api)
-        if valid:
-            session['logged_in'] = True
-            session['username'] = data.get('username')
-            return jsonify(dict(success=True,massage='You Logged in'))
-        return jsonify(dict(success=False,massage='Login Failed Username or Password are incorrect'))
-    else:
-        return jsonify(dict(success=False,massage="You're logged in already!"))
 
 
 @app.route('/message/delete', methods=['DELETE'])
 def delete_message():
     quary = request.args
     if authentication.check_user_query(request.args) or api.user:
-        user = request.args.get('user') if not api.user else api.user
+        user = request.args.get(CollectionTags.User.value) if not api.user else api.user
     else:
         return jsonify(dict(success=False,massage='User Not Found'))
     send_to, send_from, time_stamp, delete_as,error = authentication.check_and_parse_delete_query(quary, user)
@@ -91,17 +79,31 @@ def delete_message():
         return jsonify(dict(success=False, massage=error))
     return api.delete_message(send_to, send_from, time_stamp, delete_as)
 
+@app.route('/login', methods=['POST'])
+def login():
+    """POST http://127.0.0.1:5000/login?username=<username>&password=<password>"""
+    if not session.get(CollectionTags.Login.value):
+        data = request.args
+        valid = LoginAuth(data.get(CollectionTags.Username.value), data.get(CollectionTags.Password.value)).update_user_api_call(mongo, api)
+        if valid:
+            session[CollectionTags.Login.value] = True
+            session[CollectionTags.Username.value] = data.get(CollectionTags.Username.value)
+            return jsonify(dict(success=True,massage='You Logged in'))
+        return jsonify(dict(success=False,massage='Login Failed Username or Password are incorrect'))
+    else:
+        return jsonify(dict(success=False,massage="You're logged in already!"))
+
 
 @app.route('/logout', methods=['GET'])
 def logout():
-    session['logged_in'] = False
-    session['username'] = ''
+    """ update the login flag,username cookie and user
+    http://127.0.0.1:5000/logout"""
+    session[CollectionTags.Login.value] = False
+    session[CollectionTags.Username.value] = ''
     api.user = ''
     return jsonify(dict(success=True,massage="You're logged out"))
 
 
 if __name__ == '__main__':
     """in production  we use env var or flag for secret key"""
-    #     # # api = Api(mongo)
-    #     # app.secret_key = 'simba'
     app.run()
