@@ -15,4 +15,5 @@ class LoginAuth(object):
     def update_user_api_call(self, mongo, api):
         if self.check_password_and_username(mongo):
             api.user = self.username
-        return None
+            return True
+        return False

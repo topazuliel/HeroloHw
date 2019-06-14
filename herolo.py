@@ -3,7 +3,7 @@ from flask_pymongo import PyMongo
 
 import authentication
 from api_calls import Api
-from db_connaction import DbConfig
+from db_config import DbConfig
 from login_auth import LoginAuth
 
 db = DbConfig()
@@ -69,8 +69,8 @@ def read_message():
 def login():
     if not session.get('logged_in'):
         data = request.args
-        LoginAuth(data.get('username'), data.get('password')).update_user_api_call(mongo, api)
-        if api is not None:
+        valid = LoginAuth(data.get('username'), data.get('password')).update_user_api_call(mongo, api)
+        if valid:
             session['logged_in'] = True
             session['username'] = data.get('username')
             return 'Login Successfully '
@@ -99,7 +99,7 @@ def logout():
 
 
 if __name__ == '__main__':
-    #     """in production  we use env var or flag for secret key"""
+    """in production  we use env var or flag for secret key"""
     #     # # api = Api(mongo)
     #     # app.secret_key = 'simba'
     app.run()

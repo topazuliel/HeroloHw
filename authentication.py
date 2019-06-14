@@ -1,7 +1,7 @@
 from api_calls import CollectionTags
 
 
-def check_message_quary(quary,user):
+def check_message_quary(quary, user):
     try:
         if quary.get('sender') == '' or quary.get('sender') is None:
             if user is None:
@@ -37,7 +37,6 @@ def check_and_parse_delete_quary(quary, user=None):
         if user is not None and not user_is_used:
             user_is_used = True
             From = user
-            Delete_as = CollectionTags.Send.name
         else:
             return 'Please add "from" args'
     else:
@@ -46,7 +45,6 @@ def check_and_parse_delete_quary(quary, user=None):
         if user is not None and not user_is_used:
             user_is_used = True
             To = user
-            Delete_as = CollectionTags.Receiver.name
         else:
             return 'Please add "to" args'
     else:
@@ -57,4 +55,4 @@ def check_and_parse_delete_quary(quary, user=None):
     else:
         Delete_as = CollectionTags.Send.name
 
-    return To,From,Tmsp,Delete_as
+    return To, From, Tmsp, Delete_as

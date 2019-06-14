@@ -2,7 +2,7 @@ import datetime
 from enum import Enum
 
 import messeges_utils
-from db_connaction import DbConfig
+from db_config import DbConfig
 from massage import Massage
 
 
@@ -57,7 +57,7 @@ class Api():
         except:
             return 'Db Connection Failed'
 
-        return '{user} send messages:\n\n {send}    \n\n {user}     received messages:\n\n      {receive}'.format(user=user,
+        return '{user} send messages:\n\n {send}    \n\n {user} received messages:\n\n      {receive}'.format(user=user,
                                                                                                  send=messages_send_str,
                                                                                                  receive=messags_received_str)
 
