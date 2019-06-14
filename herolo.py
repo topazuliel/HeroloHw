@@ -1,4 +1,4 @@
-from flask import Flask, request, session
+from flask import Flask, request, session, jsonify
 from flask_pymongo import PyMongo
 
 import authentication
@@ -25,47 +25,47 @@ def start():
     return ''
 
 
-@app.route('/write_message', methods=['GET', 'POST'])
+@app.route('/message/write', methods=['POST'])
 def write_message():
-    quary = request.args
-    auth = authentication.check_message_quary(quary, api.user)
+    query = request.args
+    auth = authentication.check_message_query(query, api.user)
     if auth == 'OK':
-        api.write_message(quary, api.user)
-        return 'Message send successfully'
+        api.write_message(query, api.user)
+        return jsonify(dict(success=True, massage='Message send successfully'))
     if auth != '':
-        return 'Write message Failed {}'.format(auth)
+        return jsonify(dict(success=False, massage='Write message Failed {}'.format(auth)))
     else:
-        return 'Missing info: must add sender,receiver,message and subject'
+        return jsonify(dict(success=False, massage='Missing info: must add sender,receiver,message and subject'))
 
 
-@app.route('/get_all_messages', methods=['GET'])
+@app.route('/message/all', methods=['GET'])
 def get_all_messages():
-    if authentication.check_user_quary(request.args) or api.user:
+    if authentication.check_user_query(request.args) or api.user:
         user = request.args.get('user') if not api.user else api.user
         return api.get_all_messeges(user)
     else:
-        return 'User Not Found'
+        return jsonify(dict(success=False, massage='User Not Found'))
 
 
-@app.route('/get_all_unread_messages', methods=['GET'])
+@app.route('/message/unread', methods=['GET'])
 def get_all_unread_messages():
-    if authentication.check_user_quary(request.args) or api.user:
+    if authentication.check_user_query(request.args) or api.user:
         user = request.args.get('user') if not api.user else api.user
         return api.get_all_unread_messages(user)
     else:
-        return 'User Not Found'
+        return jsonify(dict(success=False, massage='User Not Found'))
 
 
-@app.route('/read_message', methods=['GET'])
+@app.route('/message/read', methods=['GET'])
 def read_message():
-    if authentication.check_user_quary(request.args) or api.user:
+    if authentication.check_user_query(request.args) or api.user:
         user = request.args.get('user') if not api.user else api.user
         return api.read_message(user)
     else:
-        return 'User Not Found'
+        return jsonify(dict(success=False, massage='User Not Found'))
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST'])
 def login():
     if not session.get('logged_in'):
         data = request.args
@@ -73,21 +73,23 @@ def login():
         if valid:
             session['logged_in'] = True
             session['username'] = data.get('username')
-            return 'Login Successfully '
-        return 'Login Failed Username or Password are incorrect'
+            return jsonify(dict(success=True,massage='You Logged in'))
+        return jsonify(dict(success=False,massage='Login Failed Username or Password are incorrect'))
     else:
-        return "You're logged in already!"
+        return jsonify(dict(success=False,massage="You're logged in already!"))
 
 
-@app.route('/delete_message', methods=['GET'])
+@app.route('/message/delete', methods=['DELETE'])
 def delete_message():
     quary = request.args
-    if authentication.check_user_quary(request.args) or api.user:
+    if authentication.check_user_query(request.args) or api.user:
         user = request.args.get('user') if not api.user else api.user
     else:
-        return 'User Not Found'
-    To, From, tmsp, delete_as = authentication.check_and_parse_delete_quary(quary, user)
-    return api.delete_message(To, From, tmsp, delete_as)
+        return jsonify(dict(success=False,massage='User Not Found'))
+    send_to, send_from, time_stamp, delete_as,error = authentication.check_and_parse_delete_query(quary, user)
+    if error is not None:
+        return jsonify(dict(success=False, massage=error))
+    return api.delete_message(send_to, send_from, time_stamp, delete_as)
 
 
 @app.route('/logout', methods=['GET'])
@@ -95,7 +97,7 @@ def logout():
     session['logged_in'] = False
     session['username'] = ''
     api.user = ''
-    return "You're logged out"
+    return jsonify(dict(success=True,massage="You're logged out"))
 
 
 if __name__ == '__main__':

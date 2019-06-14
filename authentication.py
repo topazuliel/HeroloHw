@@ -1,7 +1,7 @@
 from api_calls import CollectionTags
 
 
-def check_message_quary(quary, user):
+def check_message_query(quary, user):
     try:
         if quary.get('sender') == '' or quary.get('sender') is None:
             if user is None:
@@ -19,40 +19,41 @@ def check_message_quary(quary, user):
     return 'OK'
 
 
-def check_user_quary(quary):
+def check_user_query(quary):
     if quary.get('user') == '' or quary.get('user') is None:
         return False
     return True
 
 
-def check_and_parse_delete_quary(quary, user=None):
+def check_and_parse_delete_query(query, user=None):
     user_is_used = False
-    To = None
-    From = None
-    Tmsp = None
+    time_stamp = None
+    error = None
 
-    if quary.get('tmsp'):
-        Tmsp = quary.get('tmsp')
-    if (quary.get('from') == '' or quary.get('from') is None):
+    if query.get('tmsp'):
+        time_stamp = query.get('tmsp')
+    if (query.get('from') == '' or query.get('from') is None):
         if user is not None and not user_is_used:
             user_is_used = True
-            From = user
+            send_from = user
         else:
-            return 'Please add "from" args'
+            error = 'Please add "from" args'
+            send_from = None
     else:
-        From = quary.get('from')
-    if (quary.get('to') == '' or quary.get('to') is None):
+        send_from = query.get('from')
+    if (query.get('to') == '' or query.get('to') is None):
         if user is not None and not user_is_used:
             user_is_used = True
-            To = user
+            send_to = user
         else:
-            return 'Please add "to" args'
+            error= 'Please add "to" args'
+            send_to = None
     else:
-        To = quary.get('to')
+        send_to = query.get('to')
 
-    if user == To:
-        Delete_as = CollectionTags.Receiver.name
+    if user == send_to:
+        delete_as = CollectionTags.Receiver.name
     else:
-        Delete_as = CollectionTags.Send.name
+        delete_as = CollectionTags.Send.name
 
-    return To, From, Tmsp, Delete_as
+    return send_to, send_from, time_stamp, delete_as,error
