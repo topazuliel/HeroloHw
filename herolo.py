@@ -28,14 +28,14 @@ def start():
 @app.route('/message/write', methods=['POST'])
 def write_message():
     query = request.args
-    auth = authentication.check_message_query(query, api.user)
+    auth = authentication.check_message_query(query, user=api.user)
     if auth == CollectionTags.Ok.value:
         api.write_message(query, api.user)
-        return jsonify(dict(success=True, massage='Message send successfully'))
+        return jsonify(dict(success=True, message='Message send successfully'))
     if auth != '':
-        return jsonify(dict(success=False, massage='Write message Failed {}'.format(auth)))
+        return jsonify(dict(success=False, message='Write message failed {}'.format(auth)))
     else:
-        return jsonify(dict(success=False, massage='Missing info: must add sender,receiver,message and subject'))
+        return jsonify(dict(success=False, message='Missing info: must add sender,receiver,message and subject'))
 
 
 @app.route('/message/all', methods=['GET'])
@@ -44,7 +44,7 @@ def get_all_messages():
         user = request.args.get(CollectionTags.User.value) if not api.user else api.user
         return api.get_all_messeges(user)
     else:
-        return jsonify(dict(success=False, massage='User Not Found'))
+        return jsonify(dict(success=False, message='User Not Found'))
 
 
 @app.route('/message/unread', methods=['GET'])
@@ -53,7 +53,7 @@ def get_all_unread_messages():
         user = request.args.get(CollectionTags.User.value) if not api.user else api.user
         return api.get_all_unread_messages(user)
     else:
-        return jsonify(dict(success=False, massage='User Not Found'))
+        return jsonify(dict(success=False, message='User Not Found'))
 
 
 @app.route('/message/read', methods=['GET'])
@@ -63,7 +63,7 @@ def read_message():
         send_from = request.args.get(CollectionTags.From.value)
         return api.read_message(user,sender=send_from)
     else:
-        return jsonify(dict(success=False, massage='User Not Found'))
+        return jsonify(dict(success=False, message='User Not Found'))
 
 
 
@@ -73,10 +73,10 @@ def delete_message():
     if authentication.check_user_query(request.args) or api.user:
         user = request.args.get(CollectionTags.User.value) if not api.user else api.user
     else:
-        return jsonify(dict(success=False,massage='User Not Found'))
+        return jsonify(dict(success=False,message='User Not Found'))
     send_to, send_from, time_stamp, delete_as,error = authentication.check_and_parse_delete_query(quary, user)
     if error is not None:
-        return jsonify(dict(success=False, massage=error))
+        return jsonify(dict(success=False, message=error))
     return api.delete_message(send_to, send_from, time_stamp, delete_as)
 
 @app.route('/login', methods=['POST'])
@@ -88,10 +88,10 @@ def login():
         if valid:
             session[CollectionTags.Login.value] = True
             session[CollectionTags.Username.value] = data.get(CollectionTags.Username.value)
-            return jsonify(dict(success=True,massage='You Logged in'))
-        return jsonify(dict(success=False,massage='Login Failed Username or Password are incorrect'))
+            return jsonify(dict(success=True,message='You Logged in'))
+        return jsonify(dict(success=False,message='Login Failed Username or Password are incorrect'))
     else:
-        return jsonify(dict(success=False,massage="You're logged in already!"))
+        return jsonify(dict(success=False,message="You're logged in already!"))
 
 
 @app.route('/logout', methods=['GET'])
@@ -101,9 +101,8 @@ def logout():
     session[CollectionTags.Login.value] = False
     session[CollectionTags.Username.value] = ''
     api.user = ''
-    return jsonify(dict(success=True,massage="You're logged out"))
+    return jsonify(dict(success=True,message="You're logged out"))
 
 
 if __name__ == '__main__':
-    """in production  we use env var or flag for secret key"""
     app.run()

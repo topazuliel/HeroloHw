@@ -5,7 +5,7 @@ from flask import jsonify
 
 import messeges_utils
 from db_config import DbConfig
-from massage import Massage
+from message import Massage
 
 
 class CollectionTags(Enum):
@@ -41,7 +41,7 @@ class Api():
             send_collection.insert(massage.json_message())
             received_collection.insert(massage.json_message())
         except Exception as e:
-            return jsonify(dict(success=False, massage=e))
+            return jsonify(dict(success=False, message=e))
 
     def get_all_messeges(self, user):
         """Get all received and send messages of specific user
@@ -54,7 +54,7 @@ class Api():
             messags_received = self.db.get_connection(self.mongo, CollectionTags.Receiver.name).find({'receiver': user})
             if messags_received.count() == 0 and messages_send.count() == 0:
                 return jsonify(
-                    dict(success=True, user=user, massages="The user {} don't have any messages".format(user))), 204
+                    dict(success=True, user=user, mesages="The user {} don't have any messages".format(user))), 204
             if messages_send.count() != 0:
                 for message in messages_send:
                     send_parse_messages.append(messeges_utils.messege_parser(message))
@@ -65,7 +65,7 @@ class Api():
 
 
         except Exception as e:
-            return jsonify(dict(success=False, massage=e))
+            return jsonify(dict(success=False, message=e))
 
         return jsonify(dict(success=True, user=user, send=send_parse_messages, received=receive_parse_messages))
 
@@ -80,11 +80,11 @@ class Api():
             if messges_unread.count() != 0:
                 for message in messges_unread:
                     parse_messages.append(messeges_utils.messege_parser(message))
-                return jsonify(dict(success=True, user=user, massages=parse_messages))
+                return jsonify(dict(success=True, user=user, message=parse_messages))
             else:
-                return jsonify(dict(success=True, user=user, massages=''))
+                return jsonify(dict(success=True, user=user, message=''))
         except Exception as e:
-            return jsonify(dict(success=False, massage=e))
+            return jsonify(dict(success=False, message=e))
 
     def read_message(self, user, sender=None):
         """Read a random message of specific user and update the message to read
@@ -97,12 +97,12 @@ class Api():
             messages_unread = collection.find_one(query)
             if messages_unread is not None:
                 collection.find_one_and_update({'_id': messages_unread['_id']}, {'$set': {'unread': False}})
-                return jsonify(dict(success=True, user=user, massages=messeges_utils.messege_parser(messages_unread)))
+                return jsonify(dict(success=True, user=user, messages=messeges_utils.messege_parser(messages_unread)))
             else:
-                return jsonify(dict(success=False, massage="The user {} don't have any Unread messages".format(user)))
+                return jsonify(dict(success=False, message="The user {} don't have any Unread messages".format(user)))
 
         except Exception as e:
-            jsonify(dict(success=False, massage=e))
+            jsonify(dict(success=False, message=e))
 
     def delete_message(self, send_to, send_from, time_stamp, delete_as):
         """DELETE http://127.0.0.1:5000/message/delete?from=<username>&to=<username>&tmsp=<time stamp> if login
@@ -119,7 +119,7 @@ class Api():
         else:
             is_deleted = receive_collection.delete_one(query)
         if is_deleted.deleted_count:
-            return jsonify(dict(success=True, massages="The Message has been deleted"))
-        return jsonify(dict(success=False, massages="Message not found"))
+            return jsonify(dict(success=True, messages="The Message has been deleted"))
+        return jsonify(dict(success=False, messages="Message not found"))
         # def get_collection(self, collection_name):
         #     return self.db.connect_to_collection(self.mongo, collection_name)
