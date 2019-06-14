@@ -1,10 +1,11 @@
 from api_calls import CollectionTags
 
 
-def check_message_quary(quary):
+def check_message_quary(quary,user):
     try:
         if quary.get('sender') == '' or quary.get('sender') is None:
-            return "Please add sender"
+            if user is None:
+                return "Please add sender"
         if quary.get('receiver') == '' or quary.get('receiver') is None:
             return "Please add receiver"
         if quary.get('message') == '' or quary.get('message') is None:

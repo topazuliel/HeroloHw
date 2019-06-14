@@ -1,5 +1,3 @@
-import os
-
 from flask import Flask, request, session
 from flask_pymongo import PyMongo
 
@@ -12,6 +10,7 @@ db = DbConfig()
 app = Flask(__name__)
 app.config["MONGO_DBNAME"] = db.db_name
 app.config["MONGO_URI"] = db.db_connection
+app.config['SECRET_KEY'] = "just for test"
 mongo = PyMongo(app)
 api = Api(mongo)
 
@@ -23,15 +22,15 @@ def update_user():
 
 @app.route('/')
 def start():
-    return "App is on"
+    return ''
 
 
 @app.route('/write_message', methods=['GET', 'POST'])
 def write_message():
     quary = request.args
-    auth = authentication.check_message_quary(quary)
+    auth = authentication.check_message_quary(quary, api.user)
     if auth == 'OK':
-        api.write_message(quary)
+        api.write_message(quary, api.user)
         return 'Message send successfully'
     if auth != '':
         return 'Write message Failed {}'.format(auth)
@@ -100,10 +99,7 @@ def logout():
 
 
 if __name__ == '__main__':
-    """in production  we use env var or flag for secret key"""
-    # # api = Api(mongo)
-    app.secret_key = 'simba'
-    # app.run()
-
-
-
+    #     """in production  we use env var or flag for secret key"""
+    #     # # api = Api(mongo)
+    #     # app.secret_key = 'simba'
+    app.run()

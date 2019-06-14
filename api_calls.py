@@ -20,12 +20,12 @@ class Api():
         else:
             self.db = db_config
 
-    def write_message(self, data):
+    def write_message(self, data, user):
         """Write a message to DB"""
         try:
             send_collection = self.get_collection(CollectionTags.Send.name)
             received_collection = self.get_collection(CollectionTags.Receiver.name)
-            massage = Massage(data, str(datetime.datetime.now()))
+            massage = Massage(data, str(datetime.datetime.now()),user)
             send_collection.insert(massage.json_message())
             received_collection.insert(massage.json_message())
         except Exception as e:
@@ -57,7 +57,7 @@ class Api():
         except:
             return 'Db Connection Failed'
 
-        return '{user} send messages:\n {send}\n\n{user}  received messages:\n {receive}'.format(user=user,
+        return '{user} send messages:\n\n {send}    \n\n {user}     received messages:\n\n      {receive}'.format(user=user,
                                                                                                  send=messages_send_str,
                                                                                                  receive=messags_received_str)
 
@@ -92,18 +92,15 @@ class Api():
         except Exception as e:
             print(e)
 
-    def delete_message(self, To, From, tmsp,delete_as):
+    def delete_message(self, To, From, tmsp, delete_as):
         collection = self.get_collection(delete_as)
         if tmsp is not None:
             collection.delete_one({'creation_date': tmsp})
-            return "Message as been deleted"
         elif delete_as == CollectionTags.Send.name:
-            collection.delete_one({'sender':From,'receiver': To})
-            return "Message as been deleted"
+            collection.delete_one({'sender': From, 'receiver': To})
         else:
             collection.delete_one({'sender': From, 'receiver': To, 'unread': False})
-            return "Message as been deleted"
+        return "Message as been deleted"
 
-
-    def get_collection(self,collection_name):
+    def get_collection(self, collection_name):
         return self.db.connect_to_collection(self.mongo, collection_name)

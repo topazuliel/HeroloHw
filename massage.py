@@ -1,6 +1,6 @@
 class Massage():
-    def __init__(self, quary, creation_date):
-        self.__sender = quary.get('sender')
+    def __init__(self, quary, creation_date, user):
+        self.__sender = quary.get('sender') if not user  else user
         self.__receiver = quary.get('receiver')
         self.__message = quary.get('message')
         self.__subject = quary.get('subject')
@@ -27,4 +27,5 @@ class Massage():
         return self.__creation_date
 
     def json_message(self):
-        return dict(sender=self.__sender,receiver=self.__receiver,subject=self.__subject,message=self.__message,creation_date=self.__creation_date,unread=True)
+        return dict(sender=self.__sender, receiver=self.__receiver, subject=self.__subject, message=self.__message,
+                    creation_date=self.__creation_date, unread=True)
