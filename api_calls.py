@@ -54,7 +54,7 @@ class Api():
             messags_received = self.db.get_connection(self.mongo, CollectionTags.Receiver.name).find({'receiver': user})
             if messags_received.count() == 0 and messages_send.count() == 0:
                 return jsonify(
-                    dict(success=True, user=user, mesages="The user {} don't have any messages".format(user))), 204
+                    dict(success=True, user=user, mesages="The user don't have any messages"))
             if messages_send.count() != 0:
                 for message in messages_send:
                     send_parse_messages.append(messeges_utils.messege_parser(message))
@@ -82,7 +82,7 @@ class Api():
                     parse_messages.append(messeges_utils.messege_parser(message))
                 return jsonify(dict(success=True, user=user, message=parse_messages))
             else:
-                return jsonify(dict(success=True, user=user, message=''))
+                return jsonify(dict(success=True, user=user, mesages="The user don't have any messages"))
         except Exception as e:
             return jsonify(dict(success=False, message=e))
 
@@ -121,5 +121,4 @@ class Api():
         if is_deleted.deleted_count:
             return jsonify(dict(success=True, messages="The Message has been deleted"))
         return jsonify(dict(success=False, messages="Message not found"))
-        # def get_collection(self, collection_name):
-        #     return self.db.connect_to_collection(self.mongo, collection_name)
+
