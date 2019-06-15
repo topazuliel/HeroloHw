@@ -5,7 +5,7 @@ from flask import jsonify
 
 import messeges_utils
 from db_config import DbConfig
-from message import Massage
+from message import Message
 
 
 class CollectionTags(Enum):
@@ -37,9 +37,9 @@ class Api():
         try:
             send_collection = self.db.get_connection(self.mongo, CollectionTags.Send.name)
             received_collection = self.db.get_connection(self.mongo, CollectionTags.Receiver.name)
-            massage = Massage(data, str(datetime.datetime.now()), user)
-            send_collection.insert(massage.json_message())
-            received_collection.insert(massage.json_message())
+            message = Message(data, str(datetime.datetime.now()), user)
+            send_collection.insert(message.json_message())
+            received_collection.insert(message.json_message())
         except Exception as e:
             return jsonify(dict(success=False, message=e))
 

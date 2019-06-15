@@ -1,4 +1,4 @@
-class Massage():
+class Message():
     def __init__(self, quary, creation_date, user):
         self.__sender = quary.get('sender') if not user  else user
         self.__receiver = quary.get('receiver')
